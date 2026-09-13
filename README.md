@@ -1,15 +1,16 @@
-# Travel Planner Service
+# GlobalPhone Compare Service
 
-API Secundária do MVP **Travel Planner**, responsável pelos cálculos e regras de planejamento das viagens.
+API Secundária do MVP **GlobalPhone Compare**, responsável pelos cálculos de conversão, comparação e classificação de preços de iPhones.
 
-A API é consumida pela **Travel Planner API (API Principal)** através de comunicação REST.
+A API é consumida pela **GlobalPhone Compare API (API Principal)** através de comunicação REST.
 
 ## Funcionalidades
 
-- Cálculo do gasto médio por dia
-- Classificação do orçamento
-- Cálculo da quantidade de dias da viagem
-- Geração de informações de planejamento
+- Conversão de preços para Real (BRL)
+- Comparação de preços entre dois países
+- Identificação da opção mais econômica
+- Cálculo da economia entre dois preços
+- Classificação de preços
 - Comunicação REST com a API Principal
 - Documentação interativa com Swagger
 - Execução em container Docker
@@ -22,41 +23,28 @@ A API é consumida pela **Travel Planner API (API Principal)** através de comun
 - Swagger
 - Docker
 
-## Estrutura do Projeto
-
-```text
-travel-planner-service/
-├── app.py
-├── requirements.txt
-├── Dockerfile
-├── .dockerignore
-├── README.md
-└── services/
-    └── planejamento.py
-```
-
 ## Rotas da API
 
 | Método | Endpoint | Descrição |
 |---|---|---|
 | `GET` | `/` | Verifica se a API Secundária está funcionando |
-| `POST` | `/planejamento` | Calcula informações do planejamento da viagem |
-| `GET` | `/classificar-orcamento/{orcamento}` | Classifica o orçamento da viagem |
-| `POST` | `/calcular-dias` | Calcula a quantidade de dias entre duas datas |
+| `POST` | `/converter-preco` | Converte um preço utilizando a cotação recebida |
+| `POST` | `/comparar-precos` | Compara dois preços e identifica a melhor opção |
+| `GET` | `/classificar-preco/{preco}` | Classifica o preço informado |
 
-## Planejamento
+## Conversão de Preço
 
-### POST /planejamento
+### POST /converter-preco
 
-Recebe informações de uma viagem e calcula o gasto médio por dia.
+Recebe o preço, a moeda e a cotação fornecidos pela API Principal.
 
-Exemplo de requisição:
+Exemplo:
 
 ```json
 {
-  "destino": "Roma",
-  "dias": 10,
-  "orcamento": 14000
+  "preco": 1099,
+  "cotacao": 5.1053,
+  "moeda": "USD"
 }
 ```
 
@@ -64,68 +52,64 @@ Exemplo de resposta:
 
 ```json
 {
-  "destino": "Roma",
-  "dias": 10,
-  "orcamento": 14000,
-  "gasto_por_dia": 1400
+  "preco_original": 1099,
+  "moeda": "USD",
+  "cotacao": 5.1053,
+  "preco_em_reais": 5610.72
 }
 ```
 
-## Classificação do Orçamento
+Os valores apresentados são apenas exemplos utilizados para demonstração do MVP.
 
-### GET /classificar-orcamento/{orcamento}
+## Comparação de Preços
 
-Classifica o orçamento informado.
+### POST /comparar-precos
+
+Compara dois preços já convertidos para Real.
+
+Exemplo:
+
+```json
+{
+  "pais_1": "Estados Unidos",
+  "preco_1": 5610.72,
+  "pais_2": "Brasil",
+  "preco_2": 11999
+}
+```
+
+Exemplo de resposta:
+
+```json
+{
+  "pais_1": "Estados Unidos",
+  "preco_1": 5610.72,
+  "pais_2": "Brasil",
+  "preco_2": 11999,
+  "melhor_opcao": "Estados Unidos",
+  "economia": 6388.28
+}
+```
+
+## Classificação de Preço
+
+### GET /classificar-preco/{preco}
+
+Classifica o preço informado como baixo, intermediário ou alto.
 
 Exemplo:
 
 ```text
-GET /classificar-orcamento/12000
-```
-
-Exemplo de resposta:
-
-```json
-{
-  "orcamento": 12000,
-  "classificacao": "Confortável"
-}
-```
-
-## Cálculo de Dias
-
-### POST /calcular-dias
-
-Calcula a quantidade de dias entre a data de início e a data de fim da viagem.
-
-Exemplo:
-
-```json
-{
-  "data_inicio": "2027-05-10",
-  "data_fim": "2027-05-20"
-}
-```
-
-Exemplo de resposta:
-
-```json
-{
-  "data_inicio": "2027-05-10",
-  "data_fim": "2027-05-20",
-  "quantidade_dias": 10
-}
+GET /classificar-preco/5610.72
 ```
 
 ## Swagger UI
 
-Com a API em execução, acesse:
+Com a API Secundária em execução, o Swagger estará disponível em:
 
 ```text
 http://127.0.0.1:5001/
 ```
-
-O Swagger permite visualizar e testar os endpoints da API.
 
 ## Como Executar Localmente
 
@@ -158,28 +142,22 @@ http://127.0.0.1:5001
 Construa a imagem:
 
 ```bash
-docker build -t travel-planner-service .
+docker build -t globalphone-service .
 ```
 
 Execute o container:
 
 ```bash
-docker run -p 5001:5001 travel-planner-service
-```
-
-A API estará disponível em:
-
-```text
-http://127.0.0.1:5001
+docker run -p 5001:5001 globalphone-service
 ```
 
 ## Integração com a API Principal
 
-A **Travel Planner API** utiliza esta API para obter informações de planejamento.
+A **GlobalPhone Compare API** utiliza esta API para realizar cálculos de conversão e comparação de preços.
 
 A comunicação é realizada através de requisições REST.
 
-No Docker Compose, a API Principal acessa este serviço utilizando:
+No Docker Compose, a API Principal acessa este serviço através de:
 
 ```text
 http://api-secundaria:5001
@@ -188,15 +166,23 @@ http://api-secundaria:5001
 ## Arquitetura
 
 ```text
-Travel Planner API
-    API Principal
-         |
-         | REST
-         v
-Travel Planner Service
-    API Secundária
+GlobalPhone Compare API
+      API Principal
+           |
+           | REST
+           v
+GlobalPhone Compare Service
+      API Secundária
 ```
+
+A consulta à API externa de câmbio é responsabilidade da **API Principal**. A API Secundária recebe os valores necessários e realiza os cálculos.
 
 ## Objetivo
 
-Esta API representa um componente independente da arquitetura do MVP, concentrando as regras e cálculos relacionados ao planejamento das viagens.
+Esta API representa um componente independente da arquitetura do MVP, concentrando as regras de conversão, comparação e classificação de preços.
+
+## Autora
+
+**Bianca Maria Fernandes Alves**
+
+Projeto desenvolvido como MVP da Pós-Graduação em Desenvolvimento Full Stack da PUC-Rio.
