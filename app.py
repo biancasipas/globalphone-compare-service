@@ -1,36 +1,39 @@
 from flask import Flask
 from flask_restx import Api, Resource, fields
 
-from services.planejamento import (
-    calcular_gasto_por_dia,
-    classificar_orcamento,
-    calcular_dias
-)
-
 
 app = Flask(__name__)
+
 
 api = Api(
     app,
     version="1.0",
-    title="Travel Planner Service",
-    description="API secundária responsável pelo planejamento de viagens."
+    title="GlobalPhone Compare Service",
+    description="API secundária responsável por conversão e comparação de preços de iPhones."
 )
 
 
-# Modelo para o POST /planejamento
-planejamento_model = api.model("Planejamento", {
-    "destino": fields.String(required=True),
-    "dias": fields.Integer(required=True),
-    "orcamento": fields.Float(required=True)
-})
+# Modelo para converter um preço
+conversao_model = api.model(
+    "ConversaoPreco",
+    {
+        "preco": fields.Float(required=True),
+        "cotacao": fields.Float(required=True),
+        "moeda": fields.String(required=True)
+    }
+)
 
 
-# Modelo para o POST /calcular-dias
-datas_viagem_model = api.model("DatasViagem", {
-    "data_inicio": fields.String(required=True),
-    "data_fim": fields.String(required=True)
-})
+# Modelo para comparar dois preços já convertidos para reais
+comparacao_model = api.model(
+    "ComparacaoPrecos",
+    {
+        "pais_1": fields.String(required=True),
+        "preco_1": fields.Float(required=True),
+        "pais_2": fields.String(required=True),
+        "preco_2": fields.Float(required=True)
+    }
+)
 
 
 # Rota inicial
@@ -39,69 +42,87 @@ class Home(Resource):
 
     def get(self):
         return {
-            "mensagem": "Travel Planner Service funcionando!"
+            "mensagem": "GlobalPhone Compare Service funcionando!"
         }, 200
 
 
-# Calcula o gasto médio por dia
-@api.route("/planejamento")
-class Planejamento(Resource):
+# Converte o preço utilizando uma cotação
+@api.route("/converter-preco")
+class ConverterPreco(Resource):
 
-    @api.expect(planejamento_model)
+    @api.expect(conversao_model)
     def post(self):
         dados = api.payload
 
-        dias = dados["dias"]
-        orcamento = dados["orcamento"]
+        preco = dados["preco"]
+        cotacao = dados["cotacao"]
 
-        gasto_por_dia = calcular_gasto_por_dia(
-            orcamento,
-            dias
-        )
+        preco_convertido = round(preco * cotacao, 2)
 
         return {
-            "destino": dados["destino"],
-            "dias": dias,
-            "orcamento": orcamento,
-            "gasto_por_dia": gasto_por_dia
+            "preco_original": preco,
+            "moeda": dados["moeda"],
+            "cotacao": cotacao,
+            "preco_em_reais": preco_convertido
         }, 200
 
 
-# Classifica o orçamento
-@api.route("/classificar-orcamento/<orcamento>")
-class ClassificarOrcamento(Resource):
+# Compara preços de dois países
+@api.route("/comparar-precos")
+class CompararPrecos(Resource):
 
-    def get(self, orcamento):
+    @api.expect(comparacao_model)
+    def post(self):
+        dados = api.payload
 
-        orcamento = float(orcamento)
+        pais_1 = dados["pais_1"]
+        preco_1 = dados["preco_1"]
 
-        classificacao = classificar_orcamento(
-            orcamento
-        )
+        pais_2 = dados["pais_2"]
+        preco_2 = dados["preco_2"]
+
+        if preco_1 < preco_2:
+            melhor_pais = pais_1
+            economia = round(preco_2 - preco_1, 2)
+
+        elif preco_2 < preco_1:
+            melhor_pais = pais_2
+            economia = round(preco_1 - preco_2, 2)
+
+        else:
+            melhor_pais = "Mesmo preço"
+            economia = 0
 
         return {
-            "orcamento": orcamento,
+            "pais_1": pais_1,
+            "preco_1": preco_1,
+            "pais_2": pais_2,
+            "preco_2": preco_2,
+            "melhor_opcao": melhor_pais,
+            "economia": economia
+        }, 200
+
+
+# Classifica o preço
+@api.route("/classificar-preco/<preco>")
+class ClassificarPreco(Resource):
+
+    def get(self, preco):
+
+        preco = float(preco)
+
+        if preco < 5000:
+            classificacao = "Preço baixo"
+
+        elif preco < 8000:
+            classificacao = "Preço intermediário"
+
+        else:
+            classificacao = "Preço alto"
+
+        return {
+            "preco": preco,
             "classificacao": classificacao
-        }, 200
-
-
-# Calcula a quantidade de dias da viagem
-@api.route("/calcular-dias")
-class CalcularDias(Resource):
-
-    @api.expect(datas_viagem_model)
-    def post(self):
-        dados = api.payload
-
-        quantidade_dias = calcular_dias(
-            dados["data_inicio"],
-            dados["data_fim"]
-        )
-
-        return {
-            "data_inicio": dados["data_inicio"],
-            "data_fim": dados["data_fim"],
-            "quantidade_dias": quantidade_dias
         }, 200
 
 
