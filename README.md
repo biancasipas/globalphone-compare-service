@@ -23,6 +23,27 @@ A API é consumida pela **GlobalPhone Compare API (API Principal)** através de 
 - Swagger
 - Docker
 
+## Estrutura do Projeto
+
+```text
+globalphone-compare-service/
+├── app.py
+├── requirements.txt
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+└── README.md
+```
+
+### Descrição dos Arquivos
+
+- `app.py`: contém a implementação da API Secundária e suas rotas.
+- `requirements.txt`: contém as dependências Python utilizadas pelo projeto.
+- `Dockerfile`: define a imagem Docker da API Secundária.
+- `.dockerignore`: define os arquivos e diretórios ignorados durante a construção da imagem Docker.
+- `.gitignore`: define os arquivos e diretórios que não devem ser versionados no Git.
+- `README.md`: contém a documentação do componente.
+
 ## Rotas da API
 
 | Método | Endpoint | Descrição |
@@ -91,6 +112,8 @@ Exemplo de resposta:
 }
 ```
 
+Os valores apresentados são apenas exemplos utilizados para demonstração do MVP.
+
 ## Classificação de Preço
 
 ### GET /classificar-preco/{preco}
@@ -103,6 +126,15 @@ Exemplo:
 GET /classificar-preco/5610.72
 ```
 
+Exemplo de resposta:
+
+```json
+{
+  "preco": 5610.72,
+  "classificacao": "Preço intermediário"
+}
+```
+
 ## Swagger UI
 
 Com a API Secundária em execução, o Swagger estará disponível em:
@@ -111,7 +143,20 @@ Com a API Secundária em execução, o Swagger estará disponível em:
 http://127.0.0.1:5001/
 ```
 
+O Swagger permite visualizar e testar diretamente todas as rotas da API Secundária.
+
 ## Como Executar Localmente
+
+### Pré-requisitos
+
+- Python 3.11
+- pip
+
+Crie o ambiente virtual:
+
+```powershell
+python -m venv .venv
+```
 
 Ative o ambiente virtual:
 
@@ -125,7 +170,7 @@ Instale as dependências:
 pip install -r requirements.txt
 ```
 
-Execute:
+Execute a aplicação:
 
 ```bash
 python app.py
@@ -139,6 +184,8 @@ http://127.0.0.1:5001
 
 ## Docker
 
+A API Secundária possui seu próprio `Dockerfile`, permitindo sua execução em container independente.
+
 Construa a imagem:
 
 ```bash
@@ -151,35 +198,68 @@ Execute o container:
 docker run -p 5001:5001 globalphone-service
 ```
 
+A API estará disponível em:
+
+```text
+http://127.0.0.1:5001
+```
+
 ## Integração com a API Principal
 
-A **GlobalPhone Compare API** utiliza esta API para realizar cálculos de conversão e comparação de preços.
+A **GlobalPhone Compare API** utiliza esta API para realizar os cálculos de conversão e comparação de preços.
 
-A comunicação é realizada através de requisições REST.
+A comunicação entre os componentes é realizada através de requisições REST.
 
-No Docker Compose, a API Principal acessa este serviço através de:
+Durante a execução com Docker Compose, a API Principal acessa a API Secundária através do endereço:
 
 ```text
 http://api-secundaria:5001
 ```
 
+O arquivo `docker-compose.yml` responsável pela orquestração dos dois serviços está localizado no repositório da **API Principal**.
+
 ## Arquitetura
 
+A API Secundária faz parte do **Cenário 2** utilizado no MVP.
+
 ```text
+                    GlobalPhone Compare
+
+Frankfurter API
+  API Externa
+       |
+       | HTTPS / REST
+       v
 GlobalPhone Compare API
-      API Principal
-           |
-           | REST
-           v
+     API Principal
+       |       |
+       |       └──── SQLite
+       |
+       | REST
+       v
 GlobalPhone Compare Service
-      API Secundária
+     API Secundária
 ```
 
-A consulta à API externa de câmbio é responsabilidade da **API Principal**. A API Secundária recebe os valores necessários e realiza os cálculos.
+A consulta à API externa de câmbio é responsabilidade da **API Principal**.
+
+A API Secundária recebe os valores necessários e executa as regras de negócio relacionadas à conversão, comparação e classificação dos preços.
+
+## Repositórios do Projeto
+
+### API Principal — GlobalPhone Compare API
+
+https://github.com/biancasipas/globalphone-compare-api
+
+### API Secundária — GlobalPhone Compare Service
+
+https://github.com/biancasipas/globalphone-compare-service
 
 ## Objetivo
 
 Esta API representa um componente independente da arquitetura do MVP, concentrando as regras de conversão, comparação e classificação de preços.
+
+A separação das responsabilidades permite demonstrar a comunicação REST entre componentes independentes da aplicação.
 
 ## Autora
 
