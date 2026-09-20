@@ -29,7 +29,7 @@ API_PRINCIPAL_URL = os.getenv(
 api = Api(
     app,
     version="1.0",
-    title="GlobalPhone Compare Service",
+    title="GlobalPhone Compare Service - API Secundária",
     description=(
         "API secundária responsável por conversão, comparação, "
         "classificação, economia e ranking de preços de iPhones."
